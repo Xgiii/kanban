@@ -1,16 +1,22 @@
 'use client';
 
 import { useState } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
+import { slugify } from '@/utils';
+import Link from 'next/link';
 
 const initialBoards = [
-  { id: 1, name: 'Platform Launch' },
-  { id: 2, name: 'Marketing Plan' },
-  { id: 3, name: 'Roadmap' },
+  { id: 1, name: 'Platform Launch', href: '/platform-launch' },
+  { id: 2, name: 'Marketing Plan', href: '/marketing-plan' },
+  { id: 3, name: 'Roadmap', href: '/roadmap' },
 ];
 
 function Sidebar() {
+  const pathname = usePathname();
+  const router = useRouter();
+
   const [boards, setBoards] = useState(initialBoards);
-  const [activeBoard, setActiveBoard] = useState(boards[0].id);
+  const [activeBoard, setActiveBoard] = useState(pathname);
   const [openNewBoardModal, setOpenNewBoardModal] = useState(false);
   const [newBoardName, setNewBoardName] = useState('');
 
@@ -21,35 +27,38 @@ function Sidebar() {
     const newBoard = {
       id: boards.length + 1,
       name: newBoardName,
+      href: slugify(newBoardName),
     };
     setBoards((prevBoards) => [...prevBoards, newBoard]);
-    setActiveBoard(newBoard.id);
+    setActiveBoard(slugify(newBoardName));
     setOpenNewBoardModal(false);
     setNewBoardName('');
+    router.push(`/${slugify(newBoardName)}`);
   }
 
   return (
     <>
-      <aside className='bg-gray-700 w-1/5 h-screen flex flex-col space-y-8'>
+      <aside className='bg-gray-700 min-w-[20vw] h-screen flex flex-col space-y-8 border-r border-r-gray-600'>
         <h1 className='text-white text-2xl font-bold pt-4 px-8'>kanban</h1>
         <p className='uppercase text-xs text-gray-400 tracking-wider px-8'>
           all boards ({boards.length})
         </p>
-        <div className='space-y-1 text-gray-300'>
+        <div className='flex flex-col space-y-1 text-gray-300'>
           {boards.map((board) => (
-            <p
+            <Link
+              href={board.href}
               key={board.id}
               className={`${
-                activeBoard === board.id ? 'bg-indigo-500 ' : 'bg-gray-700'
-              } rounded-r-full px-8 mr-4 py-2 cursor-pointer hover:bg-indigo-500 transition-all`}
-              onClick={() => setActiveBoard(board.id)}
+                activeBoard === board.href ? 'bg-indigo-600 ' : 'bg-gray-700'
+              } rounded-r-full px-8 mr-4 py-2 cursor-pointer hover:bg-indigo-600 transition-all`}
+              onClick={() => setActiveBoard(board.href)}
             >
               {board.name}
-            </p>
+            </Link>
           ))}
           <p
             onClick={() => setOpenNewBoardModal(true)}
-            className='text-indigo-500 px-8 hover:text-indigo-600 cursor-pointer'
+            className='text-indigo-600 px-8 hover:text-indigo-700 cursor-pointer'
           >
             + Create New Board
           </p>

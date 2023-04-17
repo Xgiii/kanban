@@ -1,5 +1,7 @@
 export default function Home() {
   return (
-   <h1>kanban</h1>
-  )
+    <div className='mx-auto mt-10'>
+      <p>Pick board to get started</p>
+    </div>
+  );
 }
