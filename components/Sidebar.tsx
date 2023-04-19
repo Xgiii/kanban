@@ -17,12 +17,14 @@ function Sidebar() {
   const [activeBoard, setActiveBoard] = useState(pathname);
   const [openNewBoardModal, setOpenNewBoardModal] = useState(false);
   const [newBoardName, setNewBoardName] = useState('');
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     setBoards(data);
   }, [data]);
 
-  function addBoardHandler() {
+  async function addBoardHandler() {
+    setLoading(true);
     if (newBoardName.length === 0) {
       return;
     }
@@ -32,11 +34,25 @@ function Sidebar() {
       href: slugify(newBoardName),
       columns: [],
     };
+
+    const response = await fetch('/api/boards', {
+      method: 'POST',
+      body: JSON.stringify({ board: newBoard }),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      return;
+    }
+
     setBoards((prevBoards) => [...prevBoards, newBoard]);
     setActiveBoard(slugify(newBoardName));
     setOpenNewBoardModal(false);
     setNewBoardName('');
     router.push(`/${slugify(newBoardName)}`);
+    setLoading(false);
   }
 
   return (
@@ -49,7 +65,7 @@ function Sidebar() {
           kanban
         </h1>
         <p className='uppercase text-xs text-gray-400 tracking-wider px-8'>
-          all boards ({boards?.length})
+          all boards ({boards?.length || 0})
         </p>
         <div className='flex flex-col space-y-1 text-gray-300'>
           {isLoading && (
@@ -109,7 +125,11 @@ function Sidebar() {
                     type='button'
                     onClick={addBoardHandler}
                   >
-                    Add Board
+                    {loading ? (
+                      <p className='font-bold animate-pulse'>Loading....</p>
+                    ) : (
+                      'Add Board'
+                    )}
                   </button>
                 </div>
               </div>

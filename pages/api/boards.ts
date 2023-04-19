@@ -21,5 +21,17 @@ export default async function handler(
     const boards = user?.boards || [];
     res.status(200).json(boards);
   }
+
+  if (req.method === 'POST') {
+    const usersCol = client.db().collection('users');
+    const user = await usersCol.findOne({ email: userEmail });
+
+    const boards = user?.boards || [];
+    boards.push(req.body.board);
+
+    await usersCol.updateOne({ email: userEmail }, { $set: { boards } });
+    
+    res.status(200).json('success');
+  }
   client.close();
 }
