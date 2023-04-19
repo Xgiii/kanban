@@ -1,24 +1,33 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { slugify } from '@/utils';
 import Link from 'next/link';
-
-const initialBoards = [
-  { id: 1, name: 'Platform Launch', href: '/platform-launch' },
-  { id: 2, name: 'Marketing Plan', href: '/marketing-plan' },
-  { id: 3, name: 'Roadmap', href: '/roadmap' },
-];
+import { Boards } from '@/models';
 
 function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
 
-  const [boards, setBoards] = useState(initialBoards);
+  const [boards, setBoards] = useState<Boards[]>([]);
   const [activeBoard, setActiveBoard] = useState(pathname);
   const [openNewBoardModal, setOpenNewBoardModal] = useState(false);
   const [newBoardName, setNewBoardName] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    async function fetchBoards() {
+      setLoading(true);
+      const res = await fetch('/api/boards');
+      const data = await res.json();
+
+      setBoards(data);
+      setLoading(false);
+    }
+
+    fetchBoards();
+  }, []);
 
   function addBoardHandler() {
     if (newBoardName.length === 0) {
@@ -28,6 +37,7 @@ function Sidebar() {
       id: boards.length + 1,
       name: newBoardName,
       href: slugify(newBoardName),
+      columns: [],
     };
     setBoards((prevBoards) => [...prevBoards, newBoard]);
     setActiveBoard(slugify(newBoardName));
@@ -44,6 +54,7 @@ function Sidebar() {
           all boards ({boards.length})
         </p>
         <div className='flex flex-col space-y-1 text-gray-300'>
+          {loading && <p className='animate-pulse font-bold mx-8'>Loading...</p>}
           {boards.map((board) => (
             <Link
               href={board.href}
