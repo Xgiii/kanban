@@ -2,11 +2,14 @@
 
 import { useEffect, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import { slugify } from '@/utils';
+import { fetcher, slugify } from '@/utils';
 import Link from 'next/link';
 import { Boards } from '@/models';
+import useSwr from 'swr';
 
 function Sidebar() {
+  const { data, isLoading } = useSwr('/api/boards', fetcher);
+
   const pathname = usePathname();
   const router = useRouter();
 
@@ -14,20 +17,10 @@ function Sidebar() {
   const [activeBoard, setActiveBoard] = useState(pathname);
   const [openNewBoardModal, setOpenNewBoardModal] = useState(false);
   const [newBoardName, setNewBoardName] = useState('');
-  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    async function fetchBoards() {
-      setLoading(true);
-      const res = await fetch('/api/boards');
-      const data = await res.json();
-
-      setBoards(data);
-      setLoading(false);
-    }
-
-    fetchBoards();
-  }, []);
+    setBoards(data);
+  }, [data]);
 
   function addBoardHandler() {
     if (newBoardName.length === 0) {
@@ -49,13 +42,20 @@ function Sidebar() {
   return (
     <>
       <aside className='bg-gray-700 min-w-[20vw] h-screen flex flex-col space-y-8 border-r border-r-gray-600'>
-        <h1 className='text-white text-2xl font-bold pt-4 px-8'>kanban</h1>
+        <h1
+          className='text-white text-2xl font-bold pt-4 px-8 cursor-pointer'
+          onClick={() => router.push('/')}
+        >
+          kanban
+        </h1>
         <p className='uppercase text-xs text-gray-400 tracking-wider px-8'>
-          all boards ({boards.length})
+          all boards ({boards?.length})
         </p>
         <div className='flex flex-col space-y-1 text-gray-300'>
-          {loading && <p className='animate-pulse font-bold mx-8'>Loading...</p>}
-          {boards.map((board) => (
+          {isLoading && (
+            <p className='animate-pulse font-bold mx-8'>Loading...</p>
+          )}
+          {boards?.map((board) => (
             <Link
               href={board.href}
               key={board.id}

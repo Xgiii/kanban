@@ -19,3 +19,5 @@ export function unslugify(slug: string) {
 
   return words.join(' ');
 }
+
+export const fetcher = (url: string) => fetch(url).then((res) => res.json());
