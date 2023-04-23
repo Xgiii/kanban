@@ -15,7 +15,7 @@ export default function RootLayout({
     <html lang='en'>
       <body className='flex bg-gray-800 text-gray-300'>
         <Sidebar />
-        {children}
+        <main className='md:absolute md:ml-[20vw]'>{children}</main>
       </body>
     </html>
   );

@@ -1,25 +1,26 @@
+import { ObjectId } from 'mongodb';
+
 export interface Users {
+  _id?: ObjectId;
   id: number;
   email: string;
-  boards: Boards[];
 }
 [];
 
-export interface Boards {
-  id: number;
+export interface Board {
+  _id?: ObjectId;
   name: string;
   href: string;
-  columns: Columns[];
 }
 
-export interface Columns {
-  id: number;
+export interface Column {
+  _id?: ObjectId;
   name: string;
-  tasks: Tasks[];
   color: string;
+  tasks: Task[];
 }
 
-export interface Tasks {
+export interface Task {
   id: number;
   name: string;
 }

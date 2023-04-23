@@ -1,7 +1,3 @@
 export default function Home() {
-  return (
-    <div className='mx-auto mt-10'>
-      <p>Pick board to get started</p>
-    </div>
-  );
+  return <p className='ml-[30vw] mt-10'>Pick board to get started</p>;
 }
