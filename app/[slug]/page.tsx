@@ -2,7 +2,7 @@
 
 import BoardHeader from '@/components/BoardHeader';
 import Modal from '@/components/Modal';
-import { Column } from '@/models';
+import { Column, Task } from '@/models';
 import { fetcher, unslugify } from '@/utils';
 import { useEffect, useState } from 'react';
 import useSwr from 'swr';
@@ -21,12 +21,17 @@ export default function Board({ params }: { params: { slug: string } }) {
 
   const [columns, setColumns] = useState<Column[]>([]);
   const [showModal, setShowModal] = useState(false);
+  const [showTaskModal, setShowTaskModal] = useState(false);
   const [loading, setLoading] = useState(false);
   const [columnName, setColumnName] = useState('');
   const [activeColor, setActiveColor] = useState(colors[0].color);
+  const [taskTitle, setTaskTitle] = useState('');
+  const [taskDescription, setTaskDescription] = useState('');
+  const [status, setStatus] = useState('');
 
   useEffect(() => {
     setColumns(data || []);
+    setStatus(data?.[0]?._id?.toString() || '');
   }, [data]);
 
   async function addColumnHandler() {
@@ -54,10 +59,36 @@ export default function Board({ params }: { params: { slug: string } }) {
     setLoading(false);
   }
 
+  async function addTaskHandler() {
+    setLoading(true);
+
+    await fetch(`/api/boards/${params.slug}/tasks`, {
+      method: 'POST',
+      body: JSON.stringify({
+        title: taskTitle,
+        description: taskDescription,
+        colId: status,
+      }),
+      headers: { 'Content-Type': 'application/json' },
+    });
+
+    const res = await fetch(`/api/boards/${params.slug}`);
+    const updatedData = await res.json();
+    setColumns(updatedData);
+
+    setShowTaskModal(false);
+    setTaskTitle('');
+    setTaskDescription('');
+    setLoading(false);
+  }
+
   return (
     <>
       <div className='flex flex-col overflow-scroll'>
-        <BoardHeader boardName={unslugify(params.slug)} />
+        <BoardHeader
+          onClick={() => setShowTaskModal(true)}
+          boardName={unslugify(params.slug)}
+        />
         {!isLoading ? (
           <div className='flex space-x-2 mx-4 mt-20'>
             {columns?.map((column: Column) => (
@@ -72,12 +103,12 @@ export default function Board({ params }: { params: { slug: string } }) {
                   <h1>{column.name}</h1>
                 </div>
 
-                {column.tasks?.map((task) => (
+                {column.tasks?.map((task, i) => (
                   <div
-                    key={task.id}
+                    key={i}
                     className='flex items-center mx-2 bg-gray-700 p-4 rounded-md my-2'
                   >
-                    {task.name}
+                    {task.title}
                   </div>
                 ))}
               </div>
@@ -122,6 +153,53 @@ export default function Board({ params }: { params: { slug: string } }) {
                 }`}
               />
             ))}
+          </div>
+        </Modal>
+      )}
+      {showTaskModal && (
+        <Modal
+          closeHandler={() => setShowTaskModal(false)}
+          submitHandler={addTaskHandler}
+          loading={loading}
+          title='Add New Task'
+          buttonLabel='Add Task'
+        >
+          <div className='flex flex-col space-y-4 text-white'>
+            <div>
+              <label>Title</label>
+              <input
+                type='text'
+                onChange={(e) => setTaskTitle(e.target.value)}
+                value={taskTitle}
+                placeholder='e.g. Learn React'
+                className='w-full p-2 border border-gray-500 text-gray-400 rounded-md outline-none bg-gray-700'
+              />
+            </div>
+            <div>
+              <label>Description</label>
+              <textarea
+                rows={4}
+                onChange={(e) => setTaskDescription(e.target.value)}
+                value={taskDescription}
+                placeholder='e.g. Learn React'
+                className='w-full p-2 border border-gray-500 text-gray-400 rounded-md outline-none bg-gray-700'
+              />
+            </div>
+
+            <div>
+              <label>Status</label>
+              <select
+                value={status.toString()}
+                onChange={(e) => setStatus(e.target.value)}
+                className='w-full p-2 border border-gray-500 text-gray-400 rounded-md outline-none bg-gray-700'
+              >
+                {columns.map(({ name, _id }) => (
+                  <option value={_id.toString()} key={name}>
+                    {name}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
         </Modal>
       )}

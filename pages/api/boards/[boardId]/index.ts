@@ -1,4 +1,3 @@
-import { Board } from '@/models';
 import { MongoClient, ObjectId } from 'mongodb';
 import { NextApiRequest, NextApiResponse } from 'next';
 

@@ -14,13 +14,13 @@ export interface Board {
 }
 
 export interface Column {
-  _id?: ObjectId;
+  _id: ObjectId;
   name: string;
   color: string;
   tasks: Task[];
 }
 
 export interface Task {
-  id: number;
-  name: string;
+  title: string;
+  description: string;
 }
