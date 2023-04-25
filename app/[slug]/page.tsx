@@ -1,9 +1,11 @@
 'use client';
 
+import AuthCheck from '@/components/AuthCheck';
 import BoardHeader from '@/components/BoardHeader';
 import Modal from '@/components/Modal';
-import { Column, Task } from '@/models';
+import { Column } from '@/models';
 import { fetcher, unslugify } from '@/utils';
+import { useSession } from 'next-auth/react';
 import { useEffect, useState } from 'react';
 import useSwr from 'swr';
 
@@ -18,6 +20,7 @@ const colors = [
 
 export default function Board({ params }: { params: { slug: string } }) {
   const { data, isLoading } = useSwr(`/api/boards/${params.slug}`, fetcher);
+  const { data: session }: any = useSession();
 
   const [columns, setColumns] = useState<Column[]>([]);
   const [showModal, setShowModal] = useState(false);
@@ -45,7 +48,7 @@ export default function Board({ params }: { params: { slug: string } }) {
 
     const res = await fetch(`/api/boards/${params.slug}`, {
       method: 'POST',
-      body: JSON.stringify({ column: newColumn }),
+      body: JSON.stringify({ column: newColumn, uid: session?.user?._id }),
       headers: { 'Content-Type': 'application/json' },
     });
 
@@ -83,7 +86,7 @@ export default function Board({ params }: { params: { slug: string } }) {
   }
 
   return (
-    <>
+    <AuthCheck>
       <div className='flex flex-col overflow-scroll'>
         <BoardHeader
           onClick={() => setShowTaskModal(true)}
@@ -203,6 +206,6 @@ export default function Board({ params }: { params: { slug: string } }) {
           </div>
         </Modal>
       )}
-    </>
+    </AuthCheck>
   );
 }

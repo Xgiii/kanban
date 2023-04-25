@@ -8,9 +8,12 @@ import { Board } from '@/models';
 import useSwr from 'swr';
 import Modal from './Modal';
 import { ObjectId } from 'mongodb';
+import AuthCheck from './AuthCheck';
+import { useSession } from 'next-auth/react';
 
 function Sidebar() {
   const { data, isLoading } = useSwr('/api/boards', fetcher);
+  const { data: session }: any = useSession();
 
   const pathname = usePathname();
   const router = useRouter();
@@ -37,7 +40,7 @@ function Sidebar() {
 
     const response = await fetch('/api/boards', {
       method: 'POST',
-      body: JSON.stringify({ board: newBoard }),
+      body: JSON.stringify({ board: newBoard, uid: session?.user?._id }),
       headers: {
         'Content-Type': 'application/json',
       },
@@ -56,7 +59,7 @@ function Sidebar() {
   }
 
   return (
-    <>
+    <AuthCheck fallback={<p></p>}>
       <aside className='hidden md:fixed bg-gray-700 min-w-[20vw] h-screen md:flex flex-col space-y-8 border-r border-r-gray-600 z-10'>
         <h1
           className='text-white text-2xl font-bold pt-4 px-8 cursor-pointer'
@@ -110,7 +113,7 @@ function Sidebar() {
           </Modal>
         </>
       ) : null}
-    </>
+    </AuthCheck>
   );
 }
 

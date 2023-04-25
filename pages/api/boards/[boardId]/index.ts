@@ -1,5 +1,6 @@
 import { MongoClient, ObjectId } from 'mongodb';
 import { NextApiRequest, NextApiResponse } from 'next';
+import { getSession } from 'next-auth/react';
 
 export default async function handler(
   req: NextApiRequest,
@@ -7,7 +8,8 @@ export default async function handler(
 ) {
   const client = await MongoClient.connect(process.env.MONGODB_URI!);
 
-  const uid = new ObjectId('643fbf8449f90208b0ad7385');
+  const session: any = await getSession({ req });
+
   const { boardId } = req.query;
 
   if (!client) {
@@ -20,17 +22,20 @@ export default async function handler(
   const columnsCol = client.db().collection('columns');
 
   if (req.method === 'GET') {
-    const columns = await columnsCol.find({ bid: board?._id }).toArray();
+    const uid = new ObjectId(session?.user?._id);
+    const columns = await columnsCol
+      .find({ bid: board?._id, uid: uid })
+      .toArray();
     res.status(200).json(columns);
   }
 
   if (req.method === 'POST') {
-    const { column } = req.body;
+    const { column, uid } = req.body;
 
     const result = await columnsCol.insertOne({
       ...column,
       bid: board?._id,
-      uid,
+      uid: new ObjectId(uid),
     });
     res.status(200).json(result);
   }
