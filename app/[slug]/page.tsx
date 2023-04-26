@@ -20,7 +20,7 @@ const colors = [
 
 export default function Board({ params }: { params: { slug: string } }) {
   const { data, isLoading } = useSwr(`/api/boards/${params.slug}`, fetcher);
-  const { data: session }: any = useSession();
+  const { data: session } = useSession();
 
   const [columns, setColumns] = useState<Column[]>([]);
   const [showModal, setShowModal] = useState(false);
@@ -58,6 +58,7 @@ export default function Board({ params }: { params: { slug: string } }) {
       ...prevCols,
       { ...newColumn, _id: data.insertedId },
     ]);
+    setStatus(data.insertedId)
     setShowModal(false);
     setLoading(false);
   }

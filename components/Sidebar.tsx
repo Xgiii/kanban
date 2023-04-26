@@ -5,28 +5,22 @@ import { usePathname, useRouter } from 'next/navigation';
 import { fetcher, slugify } from '@/utils';
 import Link from 'next/link';
 import { Board } from '@/models';
-import useSwr from 'swr';
+import useSwr, { mutate, useSWRConfig } from 'swr';
 import Modal from './Modal';
-import { ObjectId } from 'mongodb';
 import AuthCheck from './AuthCheck';
 import { useSession } from 'next-auth/react';
 
 function Sidebar() {
-  const { data, isLoading } = useSwr('/api/boards', fetcher);
-  const { data: session }: any = useSession();
+  const { data, isLoading, isValidating } = useSwr('/api/boards', fetcher);
+  const { data: session } = useSession();
 
   const pathname = usePathname();
   const router = useRouter();
 
-  const [boards, setBoards] = useState<Board[]>([]);
   const [activeBoard, setActiveBoard] = useState(pathname);
   const [openNewBoardModal, setOpenNewBoardModal] = useState(false);
   const [newBoardName, setNewBoardName] = useState('');
   const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    setBoards(data || []);
-  }, [data]);
 
   async function addBoardHandler() {
     setLoading(true);
@@ -35,7 +29,7 @@ function Sidebar() {
     }
     const newBoard = {
       name: newBoardName,
-      href: slugify(newBoardName),
+      href: '/' + slugify(newBoardName),
     };
 
     const response = await fetch('/api/boards', {
@@ -50,8 +44,8 @@ function Sidebar() {
       return;
     }
 
-    setBoards((prevBoards) => [...prevBoards, newBoard]);
-    setActiveBoard(slugify(newBoardName));
+    mutate('/api/boards');
+    setActiveBoard('/' + slugify(newBoardName));
     setOpenNewBoardModal(false);
     setNewBoardName('');
     router.push(`/${slugify(newBoardName)}`);
@@ -68,24 +62,29 @@ function Sidebar() {
           kanban
         </h1>
         <p className='uppercase text-xs text-gray-400 tracking-wider px-8'>
-          all boards ({boards?.length || 0})
+          all boards ({data?.length || 0})
         </p>
         <div className='flex flex-col space-y-1 text-gray-300'>
-          {isLoading && (
+          {isLoading || isValidating ? (
             <p className='animate-pulse font-bold mx-8'>Loading...</p>
+          ) : (
+            <>
+              {data?.map((board: Board) => (
+                <Link
+                  href={board.href}
+                  key={board.href}
+                  className={`${
+                    activeBoard === board.href
+                      ? 'bg-indigo-600 '
+                      : 'bg-gray-700'
+                  } rounded-r-full px-8 mr-4 py-2 cursor-pointer hover:bg-indigo-600 transition-all`}
+                  onClick={() => setActiveBoard(board.href)}
+                >
+                  {board.name}
+                </Link>
+              ))}
+            </>
           )}
-          {boards?.map((board) => (
-            <Link
-              href={board.href}
-              key={board.href}
-              className={`${
-                activeBoard === board.href ? 'bg-indigo-600 ' : 'bg-gray-700'
-              } rounded-r-full px-8 mr-4 py-2 cursor-pointer hover:bg-indigo-600 transition-all`}
-              onClick={() => setActiveBoard(board.href)}
-            >
-              {board.name}
-            </Link>
-          ))}
           <p
             onClick={() => setOpenNewBoardModal(true)}
             className='text-indigo-600 px-8 hover:text-indigo-700 cursor-pointer'

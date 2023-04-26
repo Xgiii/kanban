@@ -32,5 +32,17 @@ export default async function handler(
 
     res.status(200).json('success');
   }
+
+  if (req.method === 'PUT') {
+    const { uid, href } = req.body;
+
+    const columnsCol = client.db().collection('columns');
+    const board = await boardsCol.findOne({ uid, href });
+
+    await columnsCol.deleteMany({ boardId: board?._id });
+    await boardsCol.deleteOne({ uid: new ObjectId(uid), href });
+
+    res.status(200).json('success');
+  }
   client.close();
 }
