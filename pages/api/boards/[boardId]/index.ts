@@ -18,7 +18,7 @@ export default async function handler(
   }
 
   const boardsCol = client.db().collection('boards');
-  const board = await boardsCol.findOne({ href: boardId });
+  const board = await boardsCol.findOne({ href: '/' + boardId });
   const columnsCol = client.db().collection('columns');
 
   if (req.method === 'GET') {
@@ -33,13 +33,13 @@ export default async function handler(
     const { column, uid } = req.body;
 
     if (!column.name) {
-      res.status(400).json('Column is required');
+      res.status(400).json('Column name is required');
       return;
     }
 
     const result = await columnsCol.insertOne({
       ...column,
-      bid: board?._id,
+      bid: new ObjectId(board?._id),
       uid: new ObjectId(uid),
     });
     res.status(200).json(result);
