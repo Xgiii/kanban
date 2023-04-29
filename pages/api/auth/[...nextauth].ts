@@ -10,6 +10,7 @@ export const authOptions = {
     }),
   ],
   callbacks: {
+    secret: process.env.NEXTAUTH_SECRET,
     async signIn({ user }: any) {
       const client = await MongoClient.connect(
         process.env.MONGODB_URI as string
@@ -39,7 +40,6 @@ export const authOptions = {
       return session;
     },
   },
-  secret: process.env.NEXTAUTH_SECRET,
 };
 
 export default NextAuth(authOptions);
