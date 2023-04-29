@@ -21,16 +21,19 @@ function Sidebar() {
   const [openNewBoardModal, setOpenNewBoardModal] = useState(false);
   const [newBoardName, setNewBoardName] = useState('');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     setActiveBoard(pathname!);
   }, [pathname]);
 
   async function addBoardHandler() {
-    setLoading(true);
     if (newBoardName.length === 0) {
+      setError('Please enter a board name');
       return;
     }
+
+    setLoading(true);
     const newBoard = {
       name: newBoardName,
       href: '/' + slugify(newBoardName),
@@ -44,7 +47,11 @@ function Sidebar() {
       },
     });
 
+    const data = await response.json();
+
     if (!response.ok) {
+      setError(data);
+      setLoading(false);
       return;
     }
 
@@ -108,11 +115,12 @@ function Sidebar() {
           >
             <label>Board Name</label>
             <input
-              onChange={(e) => setNewBoardName(e.target.value)}
+              onChange={(e) => (setNewBoardName(e.target.value), setError(''))}
               value={newBoardName}
               type='text'
               className='w-full p-2 border border-gray-500 rounded-md outline-none bg-gray-700'
             />
+            {error && <p className='text-red-500'>{error}</p>}
           </Modal>
         </>
       ) : null}

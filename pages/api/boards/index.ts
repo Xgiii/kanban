@@ -24,7 +24,22 @@ export default async function handler(
   }
 
   if (req.method === 'POST') {
-    // TODO: validate if board with same href/name exists
+    const boards = await boardsCol
+      .find({ uid: new ObjectId(req.body.uid) })
+      .toArray();
+
+    if (req.body.board.href.length < 3) {
+      res.status(400).json('Invalid data');
+      client.close();
+      return;
+    }
+
+    if (boards.find((board) => board.href === req.body.board.href)) {
+      res.status(400).json('Board with this name already exists');
+      client.close();
+      return;
+    }
+
     await boardsCol.insertOne({
       ...req.body.board,
       uid: new ObjectId(req.body.uid),
