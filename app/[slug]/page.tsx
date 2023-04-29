@@ -20,10 +20,10 @@ const colors = [
 
 export default function Board({ params }: { params: { slug: string } }) {
   const { data, isLoading } = useSwr(`/api/boards/${params.slug}`, fetcher);
+  const { data: boards } = useSwr(`/api/boards`, fetcher);
   const { data: session } = useSession();
 
   const [columns, setColumns] = useState<Column[]>([]);
-  const [boardHrefs, setBoardsHrefs] = useState<string[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [showTaskModal, setShowTaskModal] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -37,18 +37,6 @@ export default function Board({ params }: { params: { slug: string } }) {
     setColumns(data || []);
     setStatus(data?.[0]?._id?.toString() || '');
   }, [data]);
-
-  useEffect(() => {
-    async function fetchBoards() {
-      setLoading(true);
-      const res = await fetch('/api/boards');
-      const data = await res.json();
-      setBoardsHrefs(data.map((board: Board) => board.href));
-      setLoading(false);
-    }
-
-    fetchBoards();
-  }, []);
 
   async function addColumnHandler() {
     setLoading(true);
@@ -99,14 +87,10 @@ export default function Board({ params }: { params: { slug: string } }) {
     setLoading(false);
   }
 
-  if (!boardHrefs.find((href) => href === '/' + params.slug)) {
+  if (!boards?.find((board: Board) => board.href === '/' + params.slug)) {
     return (
       <>
-        {loading ? (
-          <p className='fixed top-1/2 left-[60%] -translate-x-1/2 -translate-y-1/2 animate-pulse'>
-            Loading...
-          </p>
-        ) : (
+        {!loading && !isLoading && (
           <div className='fixed text-center top-1/2 left-[60%] -translate-x-1/2 -translate-y-1/2'>
             <h1 className='text-3xl font-bold'>Board Not Found</h1>
             <p className='text-lg'>

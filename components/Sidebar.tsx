@@ -11,7 +11,7 @@ import AuthCheck from './AuthCheck';
 import { useSession } from 'next-auth/react';
 
 function Sidebar() {
-  const { data, isLoading, isValidating } = useSwr('/api/boards', fetcher);
+  const { data, isLoading } = useSwr('/api/boards', fetcher);
   const { data: session } = useSession();
 
   const pathname = usePathname();
@@ -76,7 +76,7 @@ function Sidebar() {
           all boards ({data?.length || 0})
         </p>
         <div className='flex flex-col space-y-1 text-gray-300'>
-          {isLoading || isValidating ? (
+          {isLoading ? (
             <p className='animate-pulse font-bold mx-8'>Loading...</p>
           ) : (
             <>
