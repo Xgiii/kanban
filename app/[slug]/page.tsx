@@ -3,7 +3,7 @@
 import AuthCheck from '@/components/AuthCheck';
 import BoardHeader from '@/components/BoardHeader';
 import Modal from '@/components/Modal';
-import { Column } from '@/models';
+import { Board, Column } from '@/models';
 import { fetcher, unslugify } from '@/utils';
 import { useSession } from 'next-auth/react';
 import { useEffect, useState } from 'react';
@@ -23,6 +23,7 @@ export default function Board({ params }: { params: { slug: string } }) {
   const { data: session } = useSession();
 
   const [columns, setColumns] = useState<Column[]>([]);
+  const [boardHrefs, setBoardsHrefs] = useState<string[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [showTaskModal, setShowTaskModal] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -36,6 +37,18 @@ export default function Board({ params }: { params: { slug: string } }) {
     setColumns(data || []);
     setStatus(data?.[0]?._id?.toString() || '');
   }, [data]);
+
+  useEffect(() => {
+    async function fetchBoards() {
+      setLoading(true);
+      const res = await fetch('/api/boards');
+      const data = await res.json();
+      setBoardsHrefs(data.map((board: Board) => board.href));
+      setLoading(false);
+    }
+
+    fetchBoards();
+  }, []);
 
   async function addColumnHandler() {
     setLoading(true);
@@ -58,7 +71,7 @@ export default function Board({ params }: { params: { slug: string } }) {
       ...prevCols,
       { ...newColumn, _id: data.insertedId },
     ]);
-    setStatus(data.insertedId)
+    setStatus(data.insertedId);
     setShowModal(false);
     setLoading(false);
   }
@@ -84,6 +97,25 @@ export default function Board({ params }: { params: { slug: string } }) {
     setTaskTitle('');
     setTaskDescription('');
     setLoading(false);
+  }
+
+  if (!boardHrefs.find((href) => href === '/' + params.slug)) {
+    return (
+      <>
+        {loading ? (
+          <p className='fixed top-1/2 left-[60%] -translate-x-1/2 -translate-y-1/2 animate-pulse'>
+            Loading...
+          </p>
+        ) : (
+          <div className='fixed text-center top-1/2 left-[60%] -translate-x-1/2 -translate-y-1/2'>
+            <h1 className='text-3xl font-bold'>Board Not Found</h1>
+            <p className='text-lg'>
+              The board you are looking for does not exist.
+            </p>
+          </div>
+        )}
+      </>
+    );
   }
 
   return (
