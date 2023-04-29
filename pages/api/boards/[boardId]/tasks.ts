@@ -17,6 +17,11 @@ export default async function handler(
 
     const columnsCol = client.db().collection('columns');
 
+    if (!title || !description || !colId) {
+      res.status(400).json('Invalid request');
+      return;
+    }
+
     const result = await columnsCol.updateOne(
       { _id: new ObjectId(colId) },
       { $push: { tasks: { title, description } } }

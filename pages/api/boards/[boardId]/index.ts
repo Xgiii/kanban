@@ -32,6 +32,11 @@ export default async function handler(
   if (req.method === 'POST') {
     const { column, uid } = req.body;
 
+    if (!column.name) {
+      res.status(400).json('Column is required');
+      return;
+    }
+
     const result = await columnsCol.insertOne({
       ...column,
       bid: board?._id,

@@ -32,6 +32,7 @@ export default function Board({ params }: { params: { slug: string } }) {
   const [taskTitle, setTaskTitle] = useState('');
   const [taskDescription, setTaskDescription] = useState('');
   const [status, setStatus] = useState('');
+  const [error, setError] = useState('');
 
   useEffect(() => {
     setColumns(data || []);
@@ -39,6 +40,11 @@ export default function Board({ params }: { params: { slug: string } }) {
   }, [data]);
 
   async function addColumnHandler() {
+    if (columnName.length === 0) {
+      setError('Column name cannot be empty');
+      return;
+    }
+
     setLoading(true);
 
     const newColumn = {
@@ -65,6 +71,11 @@ export default function Board({ params }: { params: { slug: string } }) {
   }
 
   async function addTaskHandler() {
+    if (!taskTitle) {
+      setError('Task title cannot be empty');
+      return;
+    }
+
     setLoading(true);
 
     await fetch(`/api/boards/${params.slug}/tasks`, {
@@ -156,7 +167,7 @@ export default function Board({ params }: { params: { slug: string } }) {
         >
           <label className='mb-2'>Column Name</label>
           <input
-            onChange={(e) => setColumnName(e.target.value)}
+            onChange={(e) => (setColumnName(e.target.value), setError(''))}
             value={columnName}
             type='text'
             placeholder='e.g. To Do'
@@ -174,6 +185,7 @@ export default function Board({ params }: { params: { slug: string } }) {
               />
             ))}
           </div>
+          {error && <p className='text-red-500 text-center mt-2'>{error}</p>}
         </Modal>
       )}
       {showTaskModal && (
@@ -189,7 +201,7 @@ export default function Board({ params }: { params: { slug: string } }) {
               <label>Title</label>
               <input
                 type='text'
-                onChange={(e) => setTaskTitle(e.target.value)}
+                onChange={(e) => (setTaskTitle(e.target.value), setError(''))}
                 value={taskTitle}
                 placeholder='e.g. Learn React'
                 className='w-full p-2 border border-gray-500 text-gray-400 rounded-md outline-none bg-gray-700'
@@ -220,6 +232,7 @@ export default function Board({ params }: { params: { slug: string } }) {
                 ))}
               </select>
             </div>
+            {error && <p className='text-red-500 text-center mt-2'>{error}</p>}
           </div>
         </Modal>
       )}
