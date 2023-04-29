@@ -17,7 +17,7 @@ export default async function handler(
 
     const columnsCol = client.db().collection('columns');
 
-    if (!title || !description || !colId) {
+    if (!title || !colId) {
       res.status(400).json('Invalid request');
       return;
     }
