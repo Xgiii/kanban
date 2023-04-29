@@ -17,10 +17,14 @@ function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
 
-  const [activeBoard, setActiveBoard] = useState(pathname);
+  const [activeBoard, setActiveBoard] = useState('');
   const [openNewBoardModal, setOpenNewBoardModal] = useState(false);
   const [newBoardName, setNewBoardName] = useState('');
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    setActiveBoard(pathname!);
+  }, [pathname]);
 
   async function addBoardHandler() {
     setLoading(true);
