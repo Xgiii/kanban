@@ -23,4 +23,5 @@ export interface Column {
 export interface Task {
   title: string;
   description: string;
+  status: string;
 }

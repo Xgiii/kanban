@@ -3,7 +3,8 @@
 import AuthCheck from '@/components/AuthCheck';
 import BoardHeader from '@/components/BoardHeader';
 import Modal from '@/components/Modal';
-import { Board, Column } from '@/models';
+import TrashIcon from '@/components/TrashIcon';
+import { Board, Column, Task } from '@/models';
 import { fetcher, unslugify } from '@/utils';
 import { useSession } from 'next-auth/react';
 import { useEffect, useState } from 'react';
@@ -33,6 +34,9 @@ export default function Board({ params }: { params: { slug: string } }) {
   const [taskDescription, setTaskDescription] = useState('');
   const [status, setStatus] = useState('');
   const [error, setError] = useState('');
+  const [taskDetails, setTaskDetails] = useState<Task | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [deleteColumnLoading, setDeleteColumnLoading] = useState<string | null>(null);
 
   useEffect(() => {
     setColumns(data || []);
@@ -65,7 +69,10 @@ export default function Board({ params }: { params: { slug: string } }) {
       ...prevCols,
       { ...newColumn, _id: data.insertedId },
     ]);
-    setStatus(data.insertedId);
+    setColumnName('');
+    if (!status) {
+      setStatus(data.insertedId);
+    }
     setShowModal(false);
     setLoading(false);
   }
@@ -78,17 +85,18 @@ export default function Board({ params }: { params: { slug: string } }) {
 
     setLoading(true);
 
-    await fetch(`/api/boards/${params.slug}/tasks`, {
+    const res = await fetch(`/api/boards/${params.slug}/tasks`, {
       method: 'POST',
       body: JSON.stringify({
         title: taskTitle,
         description: taskDescription,
+        status: status,
         colId: status,
+        uid: session?.user?._id,
       }),
       headers: { 'Content-Type': 'application/json' },
     });
 
-    const res = await fetch(`/api/boards/${params.slug}`);
     const updatedData = await res.json();
     setColumns(updatedData);
 
@@ -96,6 +104,60 @@ export default function Board({ params }: { params: { slug: string } }) {
     setTaskTitle('');
     setTaskDescription('');
     setLoading(false);
+  }
+
+  async function updateTaskHandler() {
+    setLoading(true);
+
+    const res = await fetch(`/api/boards/${params.slug}/tasks`, {
+      method: 'PATCH',
+      body: JSON.stringify({
+        title: taskDetails?.title,
+        description: taskDetails?.description,
+        oldStatus: taskDetails?.status,
+        newStatus: status,
+        uid: session?.user?._id,
+      }),
+      headers: { 'Content-Type': 'application/json' },
+    });
+
+    const updatedData = await res.json();
+    setColumns(updatedData);
+    setTaskDetails(null);
+    setLoading(false);
+  }
+
+  async function deleteTaskHandler() {
+    setDeleteLoading(true);
+
+    const res = await fetch(`/api/boards/${params.slug}/tasks`, {
+      method: 'PUT',
+      body: JSON.stringify({
+        title: taskDetails?.title,
+        status: taskDetails?.status,
+        uid: session?.user?._id,
+      }),
+      headers: { 'Content-Type': 'application/json' },
+    });
+
+    const updatedData = await res.json();
+    setColumns(updatedData);
+    setTaskDetails(null);
+    setDeleteLoading(false);
+  }
+
+  async function deleteColumnHandler(id: string) {
+    setDeleteColumnLoading(id);
+
+    const res = await fetch(`/api/boards/${params.slug}`, {
+      method: 'PUT',
+      body: JSON.stringify({ colId: id, uid: session?.user._id }),
+      headers: { 'Content-Type': 'application/json' },
+    });
+
+    const updatedData = await res.json();
+    setColumns(updatedData);
+    setDeleteColumnLoading(null);
   }
 
   if (!boards?.find((board: Board) => board.href === '/' + params.slug)) {
@@ -117,7 +179,7 @@ export default function Board({ params }: { params: { slug: string } }) {
     <AuthCheck>
       <div className='flex flex-col overflow-scroll'>
         <BoardHeader
-          onClick={() => setShowTaskModal(true)}
+          onClick={() => setShowTaskModal(columns.length > 0 ? true : false)}
           boardName={unslugify(params.slug)}
         />
         {!isLoading ? (
@@ -127,17 +189,28 @@ export default function Board({ params }: { params: { slug: string } }) {
                 key={column._id?.toString()}
                 className='flex flex-col min-w-[20rem]'
               >
-                <div className='flex items-center'>
-                  <span
-                    className={`${column.color} rounded-full inline-block w-4 h-4 mx-2`}
-                  />
-                  <h1>{column.name}</h1>
+                <div className='flex items-center justify-between pr-2'>
+                  <div className='flex items-center'>
+                    <span
+                      className={`${column.color} rounded-full inline-block w-4 h-4 mx-2`}
+                    />
+                    <h1>{column.name}</h1>
+                  </div>
+                  {deleteColumnLoading === column._id.toString() ? (
+                    <p className='animate-pulse'>...</p>
+                  ) : (
+                    <TrashIcon
+                      onClick={() => deleteColumnHandler(column._id.toString())}
+                      className='!w-4 !h-4 cursor-pointer'
+                    />
+                  )}
                 </div>
 
                 {column.tasks?.map((task, i) => (
                   <div
                     key={i}
-                    className='flex items-center mx-2 bg-gray-700 p-4 rounded-md my-2'
+                    className='flex items-center mx-2 bg-gray-700 p-4 rounded-md my-2 cursor-pointer'
+                    onClick={() => setTaskDetails(task)}
                   >
                     {task.title}
                   </div>
@@ -234,6 +307,40 @@ export default function Board({ params }: { params: { slug: string } }) {
             </div>
             {error && <p className='text-red-500 text-center mt-2'>{error}</p>}
           </div>
+        </Modal>
+      )}
+      {taskDetails && (
+        <Modal
+          closeHandler={() => setTaskDetails(null)}
+          submitHandler={updateTaskHandler}
+          loading={loading}
+          title={taskDetails.title}
+          buttonLabel='Update Status'
+        >
+          <p className='text-gray-300/80 mb-5'>
+            Description: {taskDetails.description || 'No description.'}
+          </p>
+          <div>
+            <label>Status</label>
+            <select
+              defaultValue={taskDetails.status}
+              value={status}
+              onChange={(e) => setStatus(e.target.value)}
+              className='w-full p-2 border border-gray-500 text-gray-400 rounded-md outline-none bg-gray-700'
+            >
+              {columns.map(({ name, _id }) => (
+                <option value={_id.toString()} key={name}>
+                  {name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <button
+            onClick={deleteTaskHandler}
+            className='mt-4 bg-red-600 py-1 px-2 rounded-md text-sm text-white font-bold '
+          >
+            {deleteLoading ? 'loading...' : 'delete task'}
+          </button>
         </Modal>
       )}
     </AuthCheck>
